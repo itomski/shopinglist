@@ -7,6 +7,7 @@ public class Item implements Serializable {
     private String name;
     private int count;
     private String description;
+    private boolean done;
 
     public Item(String name) {
         this.name = name;
@@ -42,9 +43,17 @@ public class Item implements Serializable {
         this.description = description;
     }
 
+    public boolean isDone() {
+        return done;
+    }
+
+    public void toggleDone() {
+        done = !done; // Zustand wird invertiert
+    }
+
     @Override
     public String toString() {
-        String desc = (!description.isEmpty()) ? "("+description+")" : "";
-        return name + ", " + count + " " + desc;
+        String desc = (!description.isEmpty()) ? " ("+description+")" : "";
+        return name + ", " + count + desc + " - " + ((done) ? "erledigt" : "offen");
     }
 }

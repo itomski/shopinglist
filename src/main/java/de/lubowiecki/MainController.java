@@ -1,15 +1,22 @@
 package de.lubowiecki;
 
+import javafx.collections.FXCollections;
+import javafx.collections.transformation.FilteredList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.function.Predicate;
 
 // Initializable = beim Inbetriebnehmen wird die initialize_methode automatisch ausgeführt
 public class MainController implements Initializable {
@@ -30,6 +37,8 @@ public class MainController implements Initializable {
     private ListView<Item> output;
 
     private List<Item> items = new ArrayList<>();
+
+    private Predicate<Item> filter;
 
     @FXML
     public void save() {
@@ -59,8 +68,35 @@ public class MainController implements Initializable {
         updateOutput();
     }
 
+    public void filter(ActionEvent event) {
+
+        String btnText = ((Button)event.getSource()).getText();
+        switch (btnText) {
+            case "alle":
+                filter = null;
+                break;
+
+            case "offen":
+                filter = i -> !i.isDone();
+                break;
+
+            case "erledigt":
+                filter = i -> i.isDone();
+                break;
+        }
+        updateOutput();
+    }
+
+
     private void updateOutput() {
-        output.getItems().setAll(items);
+        var items = FXCollections.observableList(this.items);
+
+        if(filter == null) {
+            output.setItems(items);
+        }
+        else {
+            output.setItems(new FilteredList<Item>(items, filter));
+        }
     }
 
     private void clearFields() {
@@ -72,6 +108,43 @@ public class MainController implements Initializable {
     private void saveToFile() throws IOException {
         try(ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(FILE))) {
             out.writeObject(items);
+        }
+    }
+
+    public void checkKey(KeyEvent event) {
+        switch (event.getCode()) {
+            case BACK_SPACE: delete();
+                break;
+            case SPACE: toggleDone();
+                break;
+        }
+    }
+
+    private void toggleDone() {
+        Item item = output.getSelectionModel().getSelectedItem(); // Was wurde ausgewählt
+        if(item != null) {
+            item.toggleDone();
+            try {
+                saveToFile();
+                updateOutput();
+            }
+            catch (IOException e) {
+                // TODO: Meldung ausgeben...
+            }
+        }
+    }
+
+    private void delete() {
+        Item item = output.getSelectionModel().getSelectedItem(); // Was wurde ausgewählt
+        if(item != null) {
+            items.remove(item);
+            try {
+                saveToFile();
+                updateOutput();
+            }
+            catch (IOException e) {
+                // TODO: Meldung ausgeben...
+            }
         }
     }
 
